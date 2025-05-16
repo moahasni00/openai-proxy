@@ -26,7 +26,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+    res.send('OK');
 });
 
 // Chat completion endpoint
