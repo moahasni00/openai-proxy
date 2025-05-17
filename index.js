@@ -31,56 +31,24 @@ app.get('/health', (req, res) => {
 
 // Chat completion endpoint
 app.post('/v1/chat/completions', async (req, res) => {
-    try {
-        console.log('Received chat completion request:', JSON.stringify(req.body, null, 2));
-        
-        const {
-            messages,
-            model = 'gpt-3.5-turbo',
-            max_tokens,
-            temperature = 0.7,
-            ...otherParams
-        } = req.body;
+  const { messages, model, ...rest } = req.body;
 
-        // Validate required parameters
-        if (!messages || !Array.isArray(messages)) {
-            console.error('Invalid request: messages array is missing or invalid');
-            return res.status(400).json({
-                error: {
-                    message: 'Messages array is required',
-                    type: 'invalid_request_error'
-                }
-            });
-        }
+  if (!messages || !model) {
+    return res.status(400).json({ error: 'Missing messages or model' });
+  }
 
-        console.log('Calling OpenAI API with params:', {
-            model,
-            messageCount: messages.length,
-            max_tokens,
-            temperature
-        });
+  try {
+    const completion = await openai.chat.completions.create({
+      model,
+      messages,
+      ...rest,
+    });
 
-        // Create completion with validated parameters
-        const response = await openai.chat.completions.create({
-            model,
-            messages,
-            max_tokens: max_tokens || undefined,
-            temperature,
-            ...otherParams
-        });
-
-        console.log('OpenAI API response received');
-        res.json(response);
-    } catch (error) {
-        console.error('Error calling OpenAI API:', error);
-        res.status(500).json({
-            error: {
-                message: error.message,
-                type: error.type,
-                code: error.code
-            }
-        });
-    }
+    res.json(completion);
+  } catch (error) {
+    console.error('OpenAI error:', error);
+    res.status(500).json({ error: error.message || 'Internal Server Error' });
+  }
 });
 
 // Start server
